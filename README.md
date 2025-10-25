@@ -1,53 +1,82 @@
-# Notification Service Demonstration (`kafka-notify`)
+# Notification Service Demonstration (real\_time\_notification\_with\_apache\_kafka) 🚀
 
-This document outlines the steps to run and test a simple notification service that uses a **producer-consumer model** likely leveraging **Apache Kafka** (or a similar message queue) for asynchronous processing.
+This repository contains a simple notification service demonstrating a **real-time, asynchronous architecture** using a **producer-consumer model** powered by **Apache Kafka**.
 
-The setup involves three main components: a **Producer API** (handling the `/send` endpoint), a **Consumer** (processing messages from the queue), and a **Retrieval API** (handling the `/notifications/{userID}` endpoint).
+The application consists of three main parts:
+
+1.  **Producer API (Port 8080):** Accepts new notification requests and publishes them to Kafka.
+2.  **Consumer (Worker):** Consumes messages from Kafka, processes them, and persists the data.
+3.  **Retrieval API (Port 8081):** Fetches the stored notifications for a user.
 
 -----
 
-## Prerequisites
+## Getting Started
 
-To run this demonstration, you will need:
+### Prerequisites
 
   * **Go** installed on your system.
-  * **Apache Kafka** (or a mock/embedded Kafka) and a service (like ZooKeeper) running and accessible on their default ports.
-  * The source code for the `kafka-notify` project.
-  * Three separate terminal windows.
+  * **Docker** and **Docker Compose** installed to run the Kafka environment.
+  * **Git** for cloning the repository.
+
+### Setup and Installation
+
+Follow these steps to get the project and its dependencies running:
+
+#### 1\. Clone the Repository
+
+Open your terminal and clone the project:
+
+```bash
+git clone https://github.com/anamulislamshamim/real_time_notification_with_apache_kafka.git
+```
+
+#### 2\. Navigate to the Directory
+
+```bash
+cd real_time_notification_with_apache_kafka
+```
+
+#### 3\. Start Kafka (using Docker)
+
+This project uses a Docker image for Kafka, which simplifies the setup. You do **not** need to manually start ZooKeeper; it is handled within the Docker configuration.
+
+Run the following command to start the Kafka container in detached mode:
+
+```bash
+docker-compose up -d
+```
 
 -----
 
 ## Running the Demo
 
-Follow these steps in the specified order across your three terminals.
+Once Kafka is running via Docker, you can start the Go services. You will need **three separate terminal windows** for the full demonstration.
 
 ### 1\. Start the Producer (API Gateway)
 
-The producer starts the HTTP API that accepts new notification requests and sends them to the message queue (e.g., Kafka). It runs on port **8080**.
+The Producer handles the `/send` endpoint and runs on port **8080**.
 
 | Terminal | Command |
 | :--- | :--- |
-| **Terminal 1** | `cd kafka-notify` |
-| | `go run cmd/producer/producer.go` |
+| **Terminal 1** | `go run cmd/producer/producer.go` |
 
-### 2\. Start the Consumer (Worker)
+### 2\. Start the Consumer (Worker & Retrieval API)
 
-The consumer runs in the background, listening to the message queue, processing the incoming notifications, and persisting them (likely to a database or in-memory store). This service also handles notification retrieval on port **8081**.
+The Consumer listens to Kafka, processes messages, and hosts the retrieval API on port **8081**.
 
 | Terminal | Command |
 | :--- | :--- |
-| **Terminal 2** | `cd kafka-notify` |
-| | `go run cmd/consumer/consumer.go` |
+| **Terminal 2** | `go run cmd/consumer/consumer.go` |
 
 -----
 
-## Testing the Flow
+## Testing the Flow (Terminal 3)
 
-With both services running, use a third terminal to simulate sending and retrieving notifications.
+With both services running, use **Terminal 3** to simulate the notification flow.
 
 ### 3\. Sending Notifications (Producer API - Port 8080)
 
-Use the following `curl` commands to post data to the Producer API.
+Post data to the Producer API to send messages to the Kafka topic.
 
 #### User 1 (Emma) Notifications
 
@@ -68,7 +97,7 @@ curl -X POST http://localhost:8080/send -d "fromID=1&toID=2&message=Emma mention
 
 ### 4\. Retrieving Notifications (Retrieval API - Port 8081)
 
-Fetch the stored notifications for a specific user ID.
+Fetch the stored notifications for a specific user ID after the consumer has had a moment to process the queue.
 
 #### Retrieving notifications for User 1 (Emma)
 
@@ -97,4 +126,14 @@ curl http://localhost:8081/notifications/2
 {"notifications": [
     {"from": {"id": 1, "name": "Emma"}, "to": {"id": 2, "name": "Bruno"}, "message": "Emma mentioned you in a comment: 'Great seeing you yesterday, @Bruno!'"}
 ]}
+```
+
+-----
+
+## Cleanup
+
+To stop the Kafka environment and remove the containers:
+
+```bash
+docker-compose down
 ```
